@@ -1,0 +1,21 @@
+# macOS and local editor state
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# R / RStudio local state
+.RData
+.Rhistory
+.Rapp.history
+.Rproj.user/
+
+# Office temporary files
+~$*
+
+# Generated analysis artifacts; regenerate from the R Markdown source
+*.rds
+predictions_test.csv
+
+# Course-provided reference material kept local, not relicensed in this public repo
+STAT482-Case1-SP26.pdf
+Tutorial on case1 method.pdf
