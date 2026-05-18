@@ -1,0 +1,8 @@
+*.R text eol=lf
+*.Rmd text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+*.docx binary
+*.pdf binary
+*.png binary
+*.pptx binary
