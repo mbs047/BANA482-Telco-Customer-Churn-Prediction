@@ -9,6 +9,14 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+project_root <- normalizePath(file.path(getwd(), ".."), mustWork = TRUE)
+
+if (!file.exists(file.path(project_root, "data/raw/telco-customer-churn.csv"))) {
+  project_root <- normalizePath(getwd(), mustWork = TRUE)
+}
+
+knitr::opts_knit$set(root.dir = project_root)
 ```
 
 ## 1. Package Installation (run once)
