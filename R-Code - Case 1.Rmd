@@ -1,0 +1,208 @@
+---
+title: "R-Code : Case 1"
+author: "Mohammed Baobaid - 202031137"
+date: "2026-01-14"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## 1. Package Installation (run once)
+
+```{r install-packages, eval=FALSE}
+packages <- c(
+  "tidyverse",
+  "caret",
+  "pROC",
+  "ROCR",
+  "glmnet",
+  "randomForest",
+  "xgboost",
+  "vroom",
+  "data.table",
+  "janitor"
+)
+```
+
+## 2. Setup
+
+```{r setup-libraries}
+set.seed(202031137)
+
+library(tidyverse)
+library(caret)
+library(pROC)
+library(janitor)
+```
+
+## 3. Load Data
+
+```{r load-data}
+df <- read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv", na = c("", "NA", " "))
+
+glimpse(df)
+summary(df)
+tabyl(df$Churn)
+```
+
+## 4. Fix Data Types
+
+```{r total-charges}
+df <- df %>%
+  mutate(TotalCharges = as.numeric(TotalCharges))
+
+sum(is.na(df$TotalCharges))
+```
+
+## 5. Missing Value Handling
+
+```{r missing-values}
+df <- df %>%
+  mutate(TotalCharges = as.numeric(TotalCharges)) %>%
+  mutate(TotalCharges = if_else(
+    is.na(TotalCharges),
+    median(TotalCharges, na.rm = TRUE),
+    TotalCharges
+  ))
+```
+
+## 6. Data Cleaning & Recoding
+
+```{r cleaning}
+df <- df %>%
+  mutate(
+    across(where(is.character), as.factor),
+    SeniorCitizen = factor(SeniorCitizen, levels = c(0,1), labels = c("No","Yes")),
+    Churn = factor(Churn, levels = c("No","Yes"))
+  ) %>%
+  select(-customerID)
+```
+
+## 7. Exploratory Data Analysis
+
+```{r eda}
+prop.table(table(df$Churn))
+
+ggplot(df, aes(x = tenure, fill = Churn)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Tenure by Churn")
+
+ggplot(df, aes(x = MonthlyCharges, fill = Churn)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Monthly Charges by Churn")
+```
+
+## 8. Feature Engineering
+
+```{r feature-engineering}
+df <- df %>%
+  mutate(
+    tenure_group = case_when(
+      tenure <= 12 ~ "0-12",
+      tenure <= 24 ~ "13-24",
+      tenure <= 48 ~ "25-48",
+      tenure <= 60 ~ "49-60",
+      TRUE ~ "61+"
+    ),
+    tenure_group = factor(
+      tenure_group,
+      levels = c("0-12","13-24","25-48","49-60","61+")
+    )
+  )
+```
+
+## 9. Train-Test Split
+
+```{r split}
+train_index <- createDataPartition(df$Churn, p = 0.75, list = FALSE)
+train_df <- df[train_index, ]
+test_df  <- df[-train_index, ]
+```
+
+## 10. Dummy Encoding (Optional)
+
+```{r dummies}
+dummies <- dummyVars(Churn ~ ., data = train_df, fullRank = TRUE)
+
+x_train <- predict(dummies, train_df) %>% as.data.frame()
+x_test  <- predict(dummies, test_df) %>% as.data.frame()
+
+y_train <- train_df$Churn
+y_test  <- test_df$Churn
+```
+
+## 11. Logistic Regression Model
+
+```{r glm-model}
+glm_fit <- glm(
+  Churn ~ tenure + MonthlyCharges + TotalCharges +
+    Contract + InternetService + tenure_group,
+  data = train_df,
+  family = binomial(link = "logit")
+)
+
+summary(glm_fit)
+exp(coef(glm_fit))
+```
+
+## 12. Model Evaluation
+
+```{r evaluation}
+test_pred_prob <- predict(glm_fit, newdata = test_df, type = "response")
+
+test_pred_class <- ifelse(test_pred_prob > 0.5, "Yes", "No") %>%
+  factor(levels = levels(df$Churn))
+
+confusionMatrix(test_pred_class, test_df$Churn, positive = "Yes")
+```
+
+## 13. ROC Curve & AUC
+
+```{r roc}
+roc_obj <- roc(
+  response = test_df$Churn,
+  predictor = test_pred_prob,
+  levels = c("No","Yes")
+)
+
+auc(roc_obj)
+plot(roc_obj, main = paste("AUC =", round(auc(roc_obj), 3)))
+```
+
+## 14. Threshold Tuning
+
+```{r threshold}
+coords(
+  roc_obj,
+  x = "best",
+  best.method = "youden",
+  ret = c("threshold", "sensitivity", "specificity")
+)
+```
+
+## 15. Variable Importance (GLM Approximation)
+
+```{r importance}
+glm_summary <- summary(glm_fit)
+zvals <- coef(glm_summary)[, "z value"]
+sort(abs(zvals), decreasing = TRUE)
+```
+
+## 16. Save Outputs
+
+```{r save}
+saveRDS(glm_fit, "glm_telco_model.rds")
+
+write_csv(
+  test_df %>%
+    mutate(
+      pred_prob = test_pred_prob,
+      pred_class = test_pred_class
+    ),
+  "predictions_test.csv"
+)
+```
