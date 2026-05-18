@@ -1,5 +1,5 @@
 ---
-title: "R-Code : Case 1"
+title: "BANA482 | Telco Customer Churn Prediction"
 author: "Mohammed Baobaid - 202031137"
 date: "2026-01-14"
 output:
@@ -42,7 +42,7 @@ library(janitor)
 ## 3. Load Data
 
 ```{r load-data}
-df <- read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv", na = c("", "NA", " "))
+df <- read_csv("data/raw/telco-customer-churn.csv", na = c("", "NA", " "))
 
 glimpse(df)
 summary(df)
@@ -195,7 +195,10 @@ sort(abs(zvals), decreasing = TRUE)
 ## 16. Save Outputs
 
 ```{r save}
-saveRDS(glm_fit, "glm_telco_model.rds")
+dir.create("models", showWarnings = FALSE)
+dir.create("data/processed", recursive = TRUE, showWarnings = FALSE)
+
+saveRDS(glm_fit, "models/glm_telco_model.rds")
 
 write_csv(
   test_df %>%
@@ -203,6 +206,6 @@ write_csv(
       pred_prob = test_pred_prob,
       pred_class = test_pred_class
     ),
-  "predictions_test.csv"
+  "data/processed/predictions_test.csv"
 )
 ```
