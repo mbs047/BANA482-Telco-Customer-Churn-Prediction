@@ -17,6 +17,11 @@
 predictions_test.csv
 models/
 data/processed/
+figure/
+*_cache/
+*_files/
+*.knit.md
+*.utf8.md
 
 # Course-provided reference material kept local, not relicensed in this public repo
 STAT482-Case1-SP26.pdf

@@ -29,6 +29,8 @@ The strongest churn signals in our analysis are short tenure, month-to-month con
 
 ## Reproduce the Analysis
 
+You need R, Pandoc, and the project packages to render the full report. Pandoc is included with RStudio, so rendering from RStudio is usually the easiest path.
+
 From the repository root, install the required R packages:
 
 ```r
